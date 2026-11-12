@@ -1,0 +1,10 @@
+{
+  "name": "fotat-hr",
+  "version": "1.0.0",
+  "description": "Fotat Bakery Factory HR, Attendance & Payroll Web App - Designed by Mr. Mohamed El-Gendy",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
+  "author": "Mr. Mohamed El-Gendy - Regional Operations Director"
+}
