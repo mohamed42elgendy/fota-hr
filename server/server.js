@@ -161,6 +161,49 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  if (urlPath === '/api/attendance/checkin' && req.method === 'POST') {
+    try {
+      const body = await readBody(req, 1024 * 1024);
+      const { employeeId, date, checkIn } = JSON.parse(body);
+      const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : {};
+      if (!Array.isArray(db.attendanceLogs)) db.attendanceLogs = [];
+
+      // Check if already checked in without checkout
+      const existing = db.attendanceLogs.find((l) => l.employeeId === employeeId && !l.checkOut);
+      if (!existing) {
+        db.attendanceLogs.push({
+          id: 'att_' + Date.now(),
+          employeeId,
+          date,
+          checkIn: checkIn || new Date().toISOString(),
+          checkOut: null
+        });
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+      }
+      return sendJson(res, 200, { ok: true, attendanceLogs: db.attendanceLogs });
+    } catch (e) {
+      return sendJson(res, 500, { error: e.message });
+    }
+  }
+
+  if (urlPath === '/api/attendance/checkout' && req.method === 'POST') {
+    try {
+      const body = await readBody(req, 1024 * 1024);
+      const { employeeId, checkOut } = JSON.parse(body);
+      const db = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : {};
+      if (!Array.isArray(db.attendanceLogs)) db.attendanceLogs = [];
+
+      const activeLog = db.attendanceLogs.find((l) => l.employeeId === employeeId && !l.checkOut);
+      if (activeLog) {
+        activeLog.checkOut = checkOut || new Date().toISOString();
+        fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf-8');
+      }
+      return sendJson(res, 200, { ok: true, attendanceLogs: db.attendanceLogs });
+    } catch (e) {
+      return sendJson(res, 500, { error: e.message });
+    }
+  }
+
   if (urlPath === '/api/config' && req.method === 'GET') {
     return sendJson(res, 200, { hasGeminiKey: Boolean(getGeminiKey()) });
   }
